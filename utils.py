@@ -3,6 +3,7 @@ import pickle
 
 TRAIN_PATH = 'data/idc_train.csv'
 TRAIN_PATH_PICKLE_SMALL = 'df_train_small.pkl'
+TRAIN_PATH_PICKLE_TINY_KS = 'train_df_ks_tiny.pkl'
 TRAIN_PATH_PICKLE_ORG_PD = 'df_train_post.pkl'
 
 TEST_PATH = 'data/idc_test.csv'

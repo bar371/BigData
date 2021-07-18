@@ -52,7 +52,7 @@ def pre_process(df):
     print(" Calculating distance (takes a while)")
     df['distance'] = df.apply(haversine_distance, axis=1) # calc distance
     print(" create some seasonal features")
-    df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'])
+    df['pickup_datetime'] = ks.to_datetime(df['pickup_datetime'])
     df['day_in_month'] = df['pickup_datetime'].dt.day
     df['day_in_week'] = df['pickup_datetime'].dt.day_name()
     df['month'] = df['pickup_datetime'].dt.month
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     # create_small_trainset()
     df_train = load_data(TRAIN_PATH)
     # print(df_train.columns)
-    # df_train = df_train.sample(frac=0.0001)
+    df_train = df_train.sample(frac=0.0001)
     pre_process(df_train)
-    dump_to_pickle(df_train, 'train_df_ks.pkl')
+    dump_to_pickle(df_train, 'train_df_ks_tiny.pkl')
     print("Finished")
