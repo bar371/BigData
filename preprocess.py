@@ -1,13 +1,8 @@
 import numpy as np
-import pandas as pd
-import os
-# from pyspark.ml.feature import Imputer
-from matplotlib import pyplot as plt
-import seaborn as sns
-import pickle
 import databricks.koalas as ks
 from utils import *
-
+from sklearn.preprocessing import OneHotEncoder
+import pandas as pd
 ks.set_option('compute.ops_on_diff_frames', True)
 from pyspark.sql import SparkSession
 spark = SparkSession \
@@ -17,14 +12,13 @@ spark = SparkSession \
     .config("spark.driver.memory", "8g") \
     .getOrCreate()
 spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
-
 from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
 
 
 def load_data(data_path:str):
     ## TODO switch to ks...
     print('loading data...')
-    df = ks.read_csv(data_path)
+    df = pd.read_csv(data_path)
     print('done.')
     return df
 
@@ -49,18 +43,22 @@ def pre_process(df):
     df.dropna(inplace=True) # removes all nas
     df = df[df['fare_amount'] < 500].dropna() # in eda we found above 500 to be outlier s
     df = df[df['fare_amount'] > 0].dropna() # in eda we found negative fares (should we remove those?)
-    print(" Calculating distance (takes a while)")
-    df['distance'] = df.apply(haversine_distance, axis=1) # calc distance
     print(" create some seasonal features")
     df['pickup_datetime'] = ks.to_datetime(df['pickup_datetime'])
     df['day_in_month'] = df['pickup_datetime'].dt.day
     df['day_in_week'] = df['pickup_datetime'].dt.day_name()
+    df['is_weekend'] = df['day_in_week'].apply( lambda x: True if x in ['Friday', 'Saturday', 'Sunday'] else False)
+    enc_df = pd.get_dummies(df['day_in_week'] , prefix='day_of_week_is')
+    df = df.join(enc_df)
     df['month'] = df['pickup_datetime'].dt.month
     df['year'] = df['pickup_datetime'].dt.year
     df['hour'] = df['pickup_datetime'].dt.hour
-    df['is_weekend'] = df['day_in_week'].apply( lambda x: True if x in ['Friday', 'Saturday', 'Sunday'] else False)
     holidays = calendar().holidays(start=df['pickup_datetime'].min(), end=df['pickup_datetime'].max())
     df['holiday'] = df['pickup_datetime'].isin(holidays)
+
+    print(" Calculating distance (takes a while)")
+    df['distance'] = df.apply(haversine_distance, axis=1) # calc distance
+
     print(' Preprocess Done!')
     return df
 
@@ -73,7 +71,7 @@ if __name__ == '__main__':
     # create_small_trainset()
     df_train = load_data(TRAIN_PATH)
     # print(df_train.columns)
-    df_train = df_train.sample(frac=0.0001)
-    pre_process(df_train)
-    dump_to_pickle(df_train, 'train_df_ks_tiny.pkl')
+    df_train = df_train.sample(frac=0.000001)
+    df_train = pre_process(df_train)
+    dump_to_pickle(df_train, 'train_df_pd_tiny.pkl')
     print("Finished")

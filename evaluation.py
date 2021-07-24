@@ -3,22 +3,29 @@ from pyspark.mllib.util import MLUtils
 from pyspark.mllib.evaluation import MulticlassMetrics
 
 # Load training data in LIBSVM format
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+
+
 
 # Run training algorithm to build the model
-def get_model_stats(model, test):
-    # Compute raw scores on the test set
-    predictionAndLabels = test.map(lambda lp: (float(model.predict(lp.features)), lp.label))
+def get_model_stats(test):
+    evaluator = BinaryClassificationEvaluator(rawPredictionCol='rawPrediction', labelCol='high_fare')
+    test.select("rawPrediction", "probability", "prediction",'high_fare').show(5)
+    print("The area under ROC for train set is {}".format(evaluator.evaluate(test)))
 
-    # Instantiate metrics object
-    metrics = MulticlassMetrics(predictionAndLabels)
-    # Overall statistics
-    precision = metrics.precision(1.0)
-    recall = metrics.recall(1.0)
-    f1Score = metrics.fMeasure(1.0)
-    print("Summary Stats")
-    print("Precision = %s" % precision)
-    print("Recall = %s" % recall)
-    print("F1 Score = %s" % f1Score)
+    # Compute raw scores on the test set
+    # predictionAndLabels = test.map(lambda lp: (float(model.predict(lp.features)), lp.label))
+    # predictionAndLabels =
+    # # Instantiate metrics object
+    # metrics = MulticlassMetrics(predictionAndLabels)
+    # # Overall statistics
+    # precision = metrics.precision(1.0)
+    # recall = metrics.recall(1.0)
+    # f1Score = metrics.fMeasure(1.0)
+    # print("Summary Stats")
+    # print("Precision = %s" % precision)
+    # print("Recall = %s" % recall)
+    # print("F1 Score = %s" % f1Score)
 
     # # Statistics by class
     # labels = data.map(lambda lp: lp.label).distinct().collect()
